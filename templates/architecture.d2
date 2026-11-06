@@ -1,0 +1,64 @@
+# kry-diagram — D2 skeleton (structure checkpoint, NOT final output)
+# Render: d2 --theme 0 --layout elk --pad 40 this.d2 out.png
+# Goal: dựng nhanh để soi thiếu node/edge trước khi build HTML. Fill thật, bỏ layer không có.
+
+direction: down
+
+client: "Client" {
+  # repeat per user type / entry point
+  userA: "{{User A}}\n{{tech}}"
+  userB: "{{User B}}"
+}
+
+edge: "Edge" {
+  dns: "{{DNS/CDN}}\n{{zone/ip}}"
+  proxy: "{{Reverse proxy}}\n{{route → :port}} · TLS"
+  dns -> proxy
+}
+
+app: "{{Compute}} · {{runtime/framework/host}}" {
+  fe: "{{Frontend}}\n{{stack}}"
+  srv: "{{Server}}\n{{role}}"
+  lib: "{{lib}}\n{{key libs}}"
+  api: "{{API Routes / modules}}" {
+    grid-columns: 3
+    route1; route2; route3; route4
+  }
+  fe -> srv -> lib
+  fe -> api
+  api -> lib
+}
+
+data: "{{Data}} · {{provider/instance}} · {{RLS?}}" {
+  tables: "Tables / collections" {
+    grid-columns: 3
+    table1; table2; table3
+  }
+  rpc: "RPC / functions\n{{fn list}}"
+  cron: "cron / jobs\n{{schedule}}"
+  cron -> rpc
+}
+
+ext: "External services" {
+  svc1: "{{Service 1}}\n{{detail}}"
+  svc2: "{{Service 2}}"
+  svc3: "{{Service 3}}"
+}
+
+# ---- main flow ----
+client.userA -> edge.dns
+client.userB -> edge.dns
+edge.proxy -> app.fe
+app.lib -> data.tables
+app.lib -> data.rpc
+
+# ---- the ONE key flow (this becomes the HTML ribbon) ----
+# example payment loop — replace with your real key flow:
+# client.userA -> ext.svc1: "① transfer"
+# ext.svc1 -> app.api: "② webhook"
+# app.api -> data.tables: "③ issue"
+# app.api -> ext.svc2: "④ notify"
+
+# ---- secondary integrations (keep few) ----
+app.lib -> ext.svc2
+app.api -> ext.svc3

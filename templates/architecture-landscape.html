@@ -1,0 +1,206 @@
+<!--
+TEMPLATE: kry-diagram — Standard System Architecture (LANDSCAPE, fit laptop, no scroll)
+=========================================================================
+HOW TO USE (for the AI):
+1. Fork this file. Replace TITLE/SUB/META in <header>.
+2. Fill the 4 flow columns (Client → Edge → Compute → Data) — drop columns/nodes not present.
+   - Each component = a .node (icon emoji + h3 + 1 short <p>, mono for tech labels via <span class="m">).
+   - A set of sub-items (API routes, DB tables) = a .grp with .chip (mono) — NOT one card each.
+3. Fill the External bottom .rail (services: payment/email/messaging/AI/CI...).
+4. Fill the .ribbon with the ONE most important key-flow, numbered steps.
+5. Keep semantic layer colors. Keep canvas 1500×858. Static — no JS, no hover.
+RULES: layout tells the story; highlight ONE key flow; never draw all cross-edges.
+       Colors = layer semantics, NOT brand. Use real names/ports/domains/tables, no X/Y/Z.
+=========================================================================
+-->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>{{SYSTEM}} — Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --client:#2563eb; --client-t:#eff6ff;
+    --edge:#475569;   --edge-t:#f1f5f9;
+    --compute:#7c3aed;--compute-t:#f5f3ff;
+    --data:#0d9488;   --data-t:#f0fdfa;
+    --ext:#d97706;    --ext-t:#fffbeb;
+    --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --line2:#cbd5e1;
+    --bg:#f8fafc; --surface:#ffffff;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --shadow:0 1px 2px rgba(15,23,42,.04), 0 3px 12px rgba(15,23,42,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--bg);
+    background-image:radial-gradient(var(--line) 1px,transparent 1px);background-size:26px 26px;-webkit-font-smoothing:antialiased}
+  .canvas{width:1500px;height:858px;margin:0 auto;padding:30px 36px;position:relative;display:flex;flex-direction:column}
+  code,.m{font-family:var(--mono)}
+
+  header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
+  .eyebrow{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+  h1{font-size:27px;font-weight:800;letter-spacing:-.02em;margin-top:4px}
+  .sub{margin-top:5px;color:var(--muted);font-size:12.5px;max-width:640px;line-height:1.45}
+  .legend{display:flex;gap:16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 14px;box-shadow:var(--shadow);font-size:11px}
+  .legend .row{display:flex;align-items:center;gap:6px}
+  .legend i{width:11px;height:11px;border-radius:3px}
+
+  .flowrow{flex:1;display:flex;align-items:stretch;gap:0;min-height:0}
+  .col{display:flex;flex-direction:column;min-width:0}
+  .c-client{flex:0 0 168px} .c-edge{flex:0 0 186px} .c-compute{flex:1} .c-data{flex:1}
+  .chev{flex:0 0 46px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+  .chev .a{font-size:26px;line-height:1;color:#cbd5e1}
+  .chev .l{font-family:var(--mono);font-size:9.5px;color:var(--muted);writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.04em}
+
+  .layer{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--lc);border-radius:14px;
+    padding:13px 15px;box-shadow:var(--shadow);height:100%;display:flex;flex-direction:column;gap:9px}
+  .client .layer{--lc:var(--client)} .edge .layer{--lc:var(--edge)}
+  .compute .layer{--lc:var(--compute)} .data .layer{--lc:var(--data)} .external .layer{--lc:var(--ext)}
+  .lhead{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+  .tag{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#fff;background:var(--lc);padding:3px 8px;border-radius:5px}
+  .lhead .s{font-family:var(--mono);font-size:10px;color:var(--muted)}
+
+  .node{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--surface)}
+  .node .top{display:flex;align-items:center;gap:8px}
+  .node .ic{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:13px;background:var(--nt);flex:0 0 auto}
+  .node h3{font-size:12.5px;font-weight:600;line-height:1.15}
+  .node p{font-size:10.5px;color:var(--muted);line-height:1.4;margin-top:5px}
+  .node p .m{font-size:9.5px;color:#475569}
+  .client .node .ic{--nt:var(--client-t)} .edge .node .ic{--nt:var(--edge-t)}
+  .compute .node .ic{--nt:var(--compute-t)} .data .node .ic{--nt:var(--data-t)} .external .node .ic{--nt:var(--ext-t)}
+  .client .node{flex:1;display:flex;flex-direction:column;justify-content:center}
+
+  .grp{border:1.4px dashed var(--line2);border-radius:10px;padding:10px;background:var(--bg);flex:1;min-height:0}
+  .grp .gt{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--muted);margin-bottom:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-family:var(--mono);font-size:10px;font-weight:500;padding:4px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--line2);color:#334155}
+  .compute .chip{background:var(--compute-t);border-color:#ddd6fe}
+  .data .chip{background:var(--data-t);border-color:#99f6e4}
+  .duo{display:flex;gap:9px}
+
+  .ribbon{margin-top:14px;background:#0f172a;border-radius:12px;padding:11px 16px;display:flex;align-items:center;gap:11px}
+  .ribbon .rt{display:flex;align-items:center;gap:8px;flex:0 0 auto;padding-right:14px;border-right:1px solid #334155}
+  .ribbon .rt .tag{background:#f59e0b}
+  .ribbon .rt b{font-size:12px;color:#f1f5f9;font-weight:600}
+  .ribbon .steps{display:flex;align-items:center;gap:0;flex:1}
+  .ribbon .st{display:flex;align-items:center;gap:8px;flex:1}
+  .ribbon .st .n{width:19px;height:19px;border-radius:50%;background:#f59e0b;color:#0f172a;font-size:10.5px;font-weight:700;display:grid;place-items:center;flex:0 0 auto}
+  .ribbon .st .x{font-size:11px;color:#cbd5e1;line-height:1.25}
+  .ribbon .st .x b{color:#f8fafc;font-weight:600}
+  .ribbon .st .x .m{font-size:9.5px;color:#94a3b8}
+  .ribbon .ar{color:#f59e0b;font-size:14px;flex:0 0 auto;padding:0 6px}
+
+  .rail{margin-top:16px} .rail .layer{height:auto}
+  .railrow{display:flex;gap:10px} .railrow .node{flex:1}
+</style>
+</head>
+<body>
+<div class="canvas" id="canvas">
+
+  <header>
+    <div>
+      <div class="eyebrow">System Architecture · {{CONTEXT}}</div>
+      <h1>{{SYSTEM}} — {{DOMAIN}}</h1>
+      <p class="sub">{{ONE_LINE_WHAT_IT_DOES}}. Flow chính chảy trái→phải qua các tầng.</p>
+    </div>
+    <div class="legend">
+      <div class="row"><i style="background:var(--client)"></i>Client</div>
+      <div class="row"><i style="background:var(--edge)"></i>Edge</div>
+      <div class="row"><i style="background:var(--compute)"></i>Compute</div>
+      <div class="row"><i style="background:var(--data)"></i>Data</div>
+      <div class="row"><i style="background:var(--ext)"></i>External</div>
+    </div>
+  </header>
+
+  <!-- MAIN FLOW: drop columns not present; add/remove .node freely -->
+  <div class="flowrow">
+
+    <div class="col c-client client">
+      <div class="layer">
+        <div class="lhead"><span class="tag">Client</span></div>
+        <!-- repeat .node per user type / entry point -->
+        <div class="node"><div class="top"><span class="ic">🎟️</span><h3>{{User A}}</h3></div><p>{{1 dòng}} · <span class="m">{{tech}}</span></p></div>
+        <div class="node"><div class="top"><span class="ic">🛠️</span><h3>{{User B}}</h3></div><p>{{1 dòng}}</p></div>
+      </div>
+    </div>
+
+    <div class="chev"><span class="a">›</span><span class="l">{{protocol}}</span></div>
+
+    <div class="col c-edge edge">
+      <div class="layer">
+        <div class="lhead"><span class="tag">Edge</span></div>
+        <div class="node" style="flex:1;display:flex;flex-direction:column;justify-content:center"><div class="top"><span class="ic">☁️</span><h3>{{DNS/CDN}}</h3></div><p><span class="m">{{zone/ip}}</span></p></div>
+        <div class="node" style="flex:1;display:flex;flex-direction:column;justify-content:center"><div class="top"><span class="ic">🧭</span><h3>{{Proxy}}</h3></div><p><span class="m">{{route → :port}}</span> · TLS</p></div>
+      </div>
+    </div>
+
+    <div class="chev"><span class="a">›</span><span class="l">:{{port}}</span></div>
+
+    <div class="col c-compute compute">
+      <div class="layer">
+        <div class="lhead"><span class="tag">Compute / App</span><span class="s">{{runtime · framework · host}}</span></div>
+        <div class="duo">
+          <div class="node" style="flex:1"><div class="top"><span class="ic">⚛️</span><h3>{{Frontend}}</h3></div><p>{{stack}}</p></div>
+          <div class="node" style="flex:1"><div class="top"><span class="ic">🔌</span><h3>{{Server}}</h3></div><p>{{role}}</p></div>
+          <div class="node" style="flex:1"><div class="top"><span class="ic">🧰</span><h3>{{lib}}</h3></div><p>{{key libs}}</p></div>
+        </div>
+        <!-- sub-items as chips, NOT one card each -->
+        <div class="grp">
+          <div class="gt">▸ {{API Routes / modules}}</div>
+          <div class="chips">
+            <span class="chip">{{route1}}</span><span class="chip">{{route2}}</span><span class="chip">{{route3}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chev"><span class="a">›</span><span class="l">{{SQL · driver}}</span></div>
+
+    <div class="col c-data data">
+      <div class="layer">
+        <div class="lhead"><span class="tag">Data</span><span class="s">{{db provider · instance · RLS?}}</span></div>
+        <div class="grp">
+          <div class="gt">▸ Tables / collections</div>
+          <div class="chips">
+            <span class="chip">{{table1}}</span><span class="chip">{{table2}}</span><span class="chip">{{table3}}</span>
+          </div>
+        </div>
+        <div class="duo">
+          <div class="node" style="flex:1.4"><div class="top"><span class="ic">⚙️</span><h3>{{RPC / functions}}</h3></div><p><span class="m">{{fn list}}</span></p></div>
+          <div class="node" style="flex:1"><div class="top"><span class="ic">⏱️</span><h3>{{cron / jobs}}</h3></div><p><span class="m">{{schedule}}</span></p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY FLOW RIBBON: the ONE most important flow, numbered. Add/remove .st as needed -->
+  <div class="ribbon">
+    <div class="rt"><span class="tag">Key flow</span><b>{{FLOW NAME}}</b></div>
+    <div class="steps">
+      <div class="st"><span class="n">1</span><span class="x"><b>{{Step 1}}</b><br><span class="m">{{detail}}</span></span></div>
+      <span class="ar">→</span>
+      <div class="st"><span class="n">2</span><span class="x"><b>{{Step 2}}</b><br><span class="m">{{detail}}</span></span></div>
+      <span class="ar">→</span>
+      <div class="st"><span class="n">3</span><span class="x"><b>{{Step 3}}</b><br><span class="m">{{detail}}</span></span></div>
+      <span class="ar">→</span>
+      <div class="st"><span class="n">4</span><span class="x"><b>{{Step 4}}</b><br><span class="m">{{detail}}</span></span></div>
+    </div>
+  </div>
+
+  <!-- EXTERNAL bottom rail -->
+  <div class="rail external">
+    <div class="layer">
+      <div class="lhead"><span class="tag">External</span><span class="s">{{categories}}</span></div>
+      <div class="railrow">
+        <div class="node"><div class="top"><span class="ic">🏦</span><h3>{{Service 1}}</h3></div><p>{{role}} · <span class="m">{{detail}}</span></p></div>
+        <div class="node"><div class="top"><span class="ic">📧</span><h3>{{Service 2}}</h3></div><p>{{role}}</p></div>
+        <div class="node"><div class="top"><span class="ic">🤖</span><h3>{{Service 3}}</h3></div><p>{{role}}</p></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
